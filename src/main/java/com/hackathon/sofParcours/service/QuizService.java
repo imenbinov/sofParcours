@@ -15,20 +15,24 @@ public class QuizService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final RoomRepository roomRepository;
+    private final AIService aiService;
 
     public QuizService(
             QuizRepository quizRepository,
             QuestionRepository questionRepository,
             AnswerRepository answerRepository,
-            RoomRepository roomRepository
+            RoomRepository roomRepository,
+            AIService aiService
     ) {
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
         this.roomRepository = roomRepository;
+        this.aiService = aiService;
     }
 
-    public Quiz createQuiz(String title, String description, String roomCode, String createdBy, List<String> questionIds) {
+    public Quiz createQuiz(String title, String description, String roomCode, String createdBy,
+                          String topic, String difficulty, String category) {
         Room room = roomRepository.findByCode(roomCode)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found"));
 
@@ -36,14 +40,16 @@ public class QuizService {
         quiz.setTitle(title);
         quiz.setDescription(description);
         quiz.setRoomCode(roomCode);
-        quiz.setQuestionIds(questionIds);
         quiz.setStatus("PENDING");
         quiz.setCurrentQuestionIndex(0);
         quiz.setCreatedBy(createdBy);
+        quiz.setCreatedAt(LocalDateTime.now());
+        quiz.setTopic(topic);
+        quiz.setDifficulty(difficulty);
+        quiz.setCategory(category);
 
         Quiz savedQuiz = quizRepository.save(quiz);
 
-        // Mise à jour de la room avec l'ID du quiz
         room.setCurrentQuizId(savedQuiz.getId());
         roomRepository.save(room);
 
@@ -61,13 +67,10 @@ public class QuizService {
     }
 
     public Answer submitAnswer(String quizId, String questionId, String userId, int selectedOptionIndex, long responseTimeMs) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found"));
-
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("Question not found"));
 
-        boolean isCorrect = selectedOptionIndex == question.getCorrectOptionIndex();
+        boolean isCorrect = question.getCorrectOptionIndex() == selectedOptionIndex;
         int pointsEarned = isCorrect ? calculatePoints(question.getPoints(), responseTimeMs, question.getTimeLimit()) : 0;
 
         Answer answer = new Answer();
@@ -88,24 +91,64 @@ public class QuizService {
                 .orElseThrow(() -> new IllegalArgumentException("Quiz not found"));
     }
 
-    public Quiz getQuizByRoomCode(String roomCode) {
-        return quizRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("No quiz found for this room"));
+    public List<Quiz> getQuizzesByRoomCode(String roomCode) {
+        return quizRepository.findAllByRoomCode(roomCode);
     }
 
     private int calculatePoints(int basePoints, long responseTimeMs, int timeLimitSeconds) {
-        // Bonus de rapidité : plus vite = plus de points
         long timeLimitMs = timeLimitSeconds * 1000L;
         double timeRatio = 1.0 - ((double) responseTimeMs / timeLimitMs);
-        int bonus = (int) (basePoints * 0.5 * Math.max(0, timeRatio)); // Max 50% bonus
+        int bonus = (int) (basePoints * 0.5 * Math.max(0, timeRatio));
         return basePoints + bonus;
     }
 
-    public List<Question> getAllQuestions() {
-        return questionRepository.findAll();
+    /**
+     * Récupère ou génère les questions d'un quiz
+     * Si les questions existent en BDD, elles sont retournées
+     * Sinon, elles sont générées par l'IA et sauvegardées
+     */
+    public List<Question> getOrGenerateQuestions(String quizId, int numberOfQuestions) {
+        Quiz quiz = getQuizById(quizId);
+
+        // Si le quiz a déjà des questions, les récupérer
+        if (quiz.getQuestionIds() != null && !quiz.getQuestionIds().isEmpty()) {
+            return questionRepository.findAllById(quiz.getQuestionIds());
+        }
+
+        // Sinon, générer via l'IA
+        String topic = quiz.getTopic() != null ? quiz.getTopic() : "Général";
+        String difficulty = quiz.getDifficulty() != null ? quiz.getDifficulty() : "MEDIUM";
+        String category = quiz.getCategory() != null ? quiz.getCategory() : "Quiz";
+
+        List<Question> generatedQuestions = aiService.generateQuestions(topic, difficulty, numberOfQuestions, category);
+
+        // Sauvegarder les questions en BDD
+        List<Question> savedQuestions = new ArrayList<>();
+        List<String> questionIds = new ArrayList<>();
+
+        for (Question question : generatedQuestions) {
+            question.setQuizId(quizId);
+            Question saved = questionRepository.save(question);
+            savedQuestions.add(saved);
+            questionIds.add(saved.getId());
+        }
+
+        // Mettre à jour le quiz avec les IDs des questions
+        quiz.setQuestionIds(questionIds);
+        quizRepository.save(quiz);
+
+        return savedQuestions;
     }
 
     public Question createQuestion(Question question) {
         return questionRepository.save(question);
+    }
+
+    public List<Answer> getQuizResults(String quizId) {
+        return answerRepository.findByQuizId(quizId);
+    }
+
+    public List<Answer> getUserAnswers(String quizId, String userId) {
+        return answerRepository.findByQuizIdAndUserId(quizId, userId);
     }
 }

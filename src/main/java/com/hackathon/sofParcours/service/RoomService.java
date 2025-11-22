@@ -5,7 +5,7 @@ import com.hackathon.sofParcours.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -17,45 +17,61 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
-    public Room createRoom(String name, String organizerId) {
+    public Room createRoom(String name, String description, String createdBy) {
         Room room = new Room();
-        room.setCode(generateUniqueCode());
+        room.setCode(generateRoomCode());
         room.setName(name);
-        room.setOrganizerId(organizerId);
+        room.setDescription(description);
+        room.setCreatedBy(createdBy);
         room.setStatus("WAITING");
-        room.setParticipantIds(new ArrayList<>());
-        room.getParticipantIds().add(organizerId); // Organizer joins automatically
         room.setCreatedAt(LocalDateTime.now());
         room.setUpdatedAt(LocalDateTime.now());
 
         return roomRepository.save(room);
     }
 
-    public Room joinRoom(String code, String userId) {
-        Room room = roomRepository.findByCode(code)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found with code: " + code));
-
-        if (room.getParticipantIds().contains(userId)) {
-            throw new IllegalArgumentException("User already in room");
-        }
-
-        room.getParticipantIds().add(userId);
-        room.setUpdatedAt(LocalDateTime.now());
-
-        return roomRepository.save(room);
+    public List<Room> getAllRooms() {
+        return roomRepository.findAll();
     }
 
     public Room getRoomByCode(String code) {
         return roomRepository.findByCode(code)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Room not found with code: " + code));
     }
 
-    private String generateUniqueCode() {
+    public Room getRoomById(String id) {
+        return roomRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found with id: " + id));
+    }
+
+    public Room joinRoom(String code, String userId) {
+        Room room = getRoomByCode(code);
+
+        if (!room.getParticipantIds().contains(userId)) {
+            room.getParticipantIds().add(userId);
+            room.setUpdatedAt(LocalDateTime.now());
+            roomRepository.save(room);
+        }
+
+        return room;
+    }
+
+    public Room updateRoomStatus(String roomId, String status) {
+        Room room = getRoomById(roomId);
+        room.setStatus(status);
+        room.setUpdatedAt(LocalDateTime.now());
+        return roomRepository.save(room);
+    }
+
+    private String generateRoomCode() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         Random random = new Random();
-        String code;
-        do {
-            code = String.format("%06d", random.nextInt(1000000));
-        } while (roomRepository.existsByCode(code));
-        return code;
+        StringBuilder code = new StringBuilder();
+
+        for (int i = 0; i < 6; i++) {
+            code.append(characters.charAt(random.nextInt(characters.length())));
+        }
+
+        return code.toString();
     }
 }
