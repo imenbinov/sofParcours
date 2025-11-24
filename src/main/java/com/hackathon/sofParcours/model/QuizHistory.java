@@ -21,11 +21,15 @@ public class QuizHistory {
     private int rank;
     private LocalDateTime completedAt;
     private LocalDateTime startedAt;
+    private LocalDateTime createdAt;
 
-    public QuizHistory() {}
+    public QuizHistory() {
+        this.createdAt = LocalDateTime.now();
+        this.completedAt = LocalDateTime.now();
+    }
 
-    public QuizHistory(String id, String userId, String quizId, String roomCode, int totalScore, 
-                      int correctAnswers, int totalQuestions, List<String> badgesEarned, 
+    public QuizHistory(String id, String userId, String quizId, String roomCode, int totalScore,
+                      int correctAnswers, int totalQuestions, List<String> badgesEarned,
                       int rank, LocalDateTime completedAt, LocalDateTime startedAt) {
         this.id = id;
         this.userId = userId;
@@ -38,6 +42,7 @@ public class QuizHistory {
         this.rank = rank;
         this.completedAt = completedAt;
         this.startedAt = startedAt;
+        this.createdAt = LocalDateTime.now();
     }
 
     public String getId() { return id; }
@@ -72,4 +77,13 @@ public class QuizHistory {
 
     public LocalDateTime getStartedAt() { return startedAt; }
     public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    // Méthodes utilitaires pour calculer le score
+    public double calculateScore() {
+        if (totalQuestions == 0) return 0;
+        return (double) correctAnswers / totalQuestions * 100;
+    }
 }
