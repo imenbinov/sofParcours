@@ -1,6 +1,8 @@
 package com.hackathon.sofParcours.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -11,9 +13,34 @@ import java.util.List;
 public class Room {
     @Id
     private String id;
-    private String code;
+    
     private String name;
     private String description;
+    private String code;
+    
+    /**
+     * Slug normalisé pour recherche idempotente
+     * Ex: "DevOps avancé" → "devops-avance"
+     */
+    @Indexed(unique = true)
+    private String slug;
+    
+    /**
+     * Indique si la Room a été générée par IA
+     */
+    private Boolean generatedByAI = false;
+    
+    /**
+     * Date de génération par IA
+     */
+    private LocalDateTime generatedAt;
+    
+    /**
+     * Quiz associé à cette Room
+     */
+    @Transient
+    private Quiz quiz;
+    
     private String createdBy;
     private List<String> participantIds = new ArrayList<>();
     private String currentQuizId;
@@ -67,4 +94,42 @@ public class Room {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // Getters et setters pour les nouveaux champs
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public Boolean getGeneratedByAI() {
+        return generatedByAI;
+    }
+
+    public void setGeneratedByAI(Boolean generatedByAI) {
+        this.generatedByAI = generatedByAI;
+    }
+
+    public LocalDateTime getGeneratedAt() {
+        return generatedAt;
+    }
+
+    public void setGeneratedAt(LocalDateTime generatedAt) {
+        this.generatedAt = generatedAt;
+    }
+
+    public Quiz getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(Quiz quiz) {
+        this.quiz = quiz;
+    }
+
+    public void setParticipants(List<String> participants) {
+        this.participantIds = participants;
+    }
 }

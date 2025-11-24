@@ -1,6 +1,7 @@
 package com.hackathon.sofParcours.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -24,6 +25,12 @@ public class Quiz {
     private String topic;
     private String difficulty; // EASY, MEDIUM, HARD
     private String category;
+
+    /**
+     * Liste des questions associées à ce quiz
+     */
+    @Transient
+    private List<Question> questions;
 
     public Quiz() {}
 
@@ -87,4 +94,28 @@ public class Quiz {
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
+    }
+
+    public void setRoomId(String roomId) {
+        this.roomCode = roomId;
+    }
+
+    public String getRoomId() {
+        return this.roomCode;
+    }
+
+    public void setDuration(int duration) {
+        // Ajouter un champ duration si nécessaire
+    }
+
+    public Integer getDuration() {
+        return 30; // Valeur par défaut
+    }
 }

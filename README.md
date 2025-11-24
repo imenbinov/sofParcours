@@ -1,183 +1,304 @@
-# 🎯 SofParcours - Quiz Application avec IA
+# SofParcours - Quiz Platform avec Génération IA
 
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-green.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green.svg)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Latest-green.svg)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 📝 Description
+## 📋 Description
 
-SofParcours est une application de quiz interactive avec génération intelligente de questions par IA. L'application permet de créer des salles de quiz en temps réel avec système de badges, scores et classements.
+**SofParcours** est une plateforme de quiz interactive avec génération automatique de contenu par IA. L'application permet de créer des salles de quiz (Rooms) avec questions générées intelligemment via OpenAI GPT, un système de badges, de scoring et de leaderboard en temps réel.
 
-## ✨ Fonctionnalités
+## 🚀 Fonctionnalités
 
-- 🤖 **Génération de questions par IA** - Questions générées automatiquement et sauvegardées
-- 🏠 **Gestion de Rooms** - Créez et rejoignez des salles de quiz
-- 🎮 **Quiz en temps réel** - Workflow dynamique et interactif
-- 🏆 **Système de Badges** - Débloquez des badges selon vos performances
-- 📊 **Scoring & Classements** - Points basés sur le temps de réponse
-- 📚 **Cache intelligent** - Questions sauvegardées en MongoDB
-- 🔄 **RESTful API** - Endpoints complets et documentés
-- 📖 **Documentation Swagger** - Interface interactive pour tester l'API
+### ✅ Implémentées
+- **Génération IA de Quiz** : Endpoint idempotent `/api/rooms/search-or-create` qui génère automatiquement Room + Quiz + Questions
+- **Gestion des Rooms** : Création, jointure, statut des salles de quiz
+- **Système de Quiz** : Questions à choix multiples avec scoring
+- **Authentification** : JWT + Spring Security
+- **Badges & Scoring** : Système de points et récompenses
+- **Leaderboard** : Classement des joueurs
+- **API Documentation** : Swagger UI intégré
+- **Normalisation Slug** : Système idempotent pour éviter les doublons
 
-## 🚀 Technologies
+### 🔄 Architecture
 
-- **Backend:** Java 21, Spring Boot 3.2.1
-- **Base de données:** MongoDB
-- **Documentation:** Springdoc OpenAPI (Swagger)
-- **Architecture:** REST API
+```
+┌─────────────┐      ┌──────────────────┐      ┌─────────────┐
+│   Client    │─────▶│  RoomController  │─────▶│  MongoDB    │
+└─────────────┘      └──────────────────┘      └─────────────┘
+                              │
+                              ▼
+                     ┌──────────────────┐
+                     │RoomCreationService│
+                     └──────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+            ┌───────────────┐   ┌──────────────┐
+            │  AIService    │   │ RoomRepository│
+            │  (OpenAI GPT) │   │  findBySlug() │
+            └───────────────┘   └──────────────┘
+```
 
-## 📋 Prérequis
+## 🛠️ Technologies
+
+- **Backend** : Spring Boot 3.2, Java 21
+- **Database** : MongoDB
+- **AI** : OpenAI GPT-3.5/4
+- **Security** : Spring Security, JWT
+- **API Doc** : Springdoc OpenAPI (Swagger)
+- **Cache** : Spring Cache
+- **Build** : Maven
+
+## 📦 Installation
+
+### Prérequis
 
 - Java 21 ou supérieur
+- MongoDB (localhost:27017 ou Atlas)
 - Maven 3.8+
-- MongoDB 7.0+ (local ou cloud)
+- Clé API OpenAI
 
-## ⚙️ Installation
+### Configuration
 
-### 1. Cloner le repository
+**1. Cloner le projet**
 ```bash
 git clone https://github.com/imenbinov/sofParcours.git
 cd sofParcours
 ```
 
-### 2. Configurer MongoDB
-Assurez-vous que MongoDB est en cours d'exécution sur `localhost:27017`
-
-Ou modifiez `src/main/resources/application.properties`:
+**2. Configurer `application.properties`**
 ```properties
+# Application
+spring.application.name=SofQuizRoom
+server.port=8080
+
+# MongoDB
 spring.data.mongodb.uri=mongodb://localhost:27017/sofparcours
+spring.data.mongodb.database=sofparcours
+
+# AI Service (IMPORTANT: Remplacer par votre vraie clé)
+ai.api.key=sk-votre-cle-openai
+ai.api.url=https://api.openai.com/v1/chat/completions
+ai.api.timeout-ms=10000
+
+# Swagger
+springdoc.api-docs.path=/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+springdoc.swagger-ui.enabled=true
+
+# CORS
+spring.web.cors.allowed-origins=*
+spring.web.cors.allowed-methods=GET,POST,PUT,DELETE,OPTIONS
 ```
 
-### 3. Compiler et lancer l'application
+**3. Lancer l'application**
 ```bash
 mvn clean install
 mvn spring-boot:run
 ```
 
-L'application démarre sur **http://localhost:8080**
+**4. Accéder à l'application**
+- Application : http://localhost:8080
+- Swagger UI : http://localhost:8080/swagger-ui.html
+- API Docs : http://localhost:8080/api-docs
 
-## 📚 Documentation API
+## 📚 API Endpoints
 
-Une fois l'application lancée, accédez à la documentation Swagger:
+### 🤖 Génération IA de Quiz
 
-**http://localhost:8080/swagger-ui.html**
+**GET /api/rooms/search-or-create**
 
-## 🎮 Workflow Principal
+Endpoint idempotent qui recherche ou crée automatiquement une Room avec Quiz et Questions générés par IA.
 
-### 1. Créer une Room
+**Paramètres:**
+- `q` (required) : Sujet du quiz (ex: "DevOps avancé")
+- `userProfile` (optional) : Profil utilisateur (défaut: "anonymous")
+
+**Exemple:**
 ```bash
-POST /api/rooms
+curl "http://localhost:8080/api/rooms/search-or-create?q=DevOps%20avancé"
+```
+
+**Réponse:**
+```json
 {
-  "name": "Quiz Java",
-  "description": "Test IA",
-  "createdBy": "admin"
+  "id": "65f1a2b3c4d5e6f7g8h9i0j1",
+  "name": "DevOps Avancé",
+  "description": "Quiz complet sur les pratiques DevOps avancées",
+  "code": "ABC123",
+  "slug": "devops-avance",
+  "generatedByAI": true,
+  "generatedAt": "2024-01-20T10:30:00",
+  "quiz": {
+    "title": "DevOps Avancé - Quiz",
+    "questions": [
+      {
+        "text": "Qu'est-ce que le CI/CD?",
+        "type": "multiple_choice",
+        "options": ["..."],
+        "correctAnswer": "...",
+        "explanation": "...",
+        "points": 10
+      }
+    ]
+  }
 }
 ```
 
-### 2. Créer un Quiz
-```bash
-POST /api/quizzes
-{
-  "title": "Quiz Spring Boot",
-  "roomCode": "ABC123",
-  "topic": "Spring Boot",
-  "difficulty": "MEDIUM"
-}
-```
-
-### 3. Générer des Questions avec l'IA
-```bash
-GET /api/quizzes/{quizId}/questions?numberOfQuestions=5
-```
-
-**🎉 Les questions sont générées par l'IA, affichées ET sauvegardées !**
-
-### 4. Soumettre une Réponse
-```bash
-POST /api/quizzes/answers
-{
-  "userId": "user1",
-  "questionId": "q1",
-  "quizId": "quiz123",
-  "selectedOptionIndex": 0,
-  "responseTimeMs": 15000
-}
-```
-
-## 🏗️ Structure du Projet
-
-```
-src/main/java/com/hackathon/sofParcours/
-├── config/          # Configuration (DataInitializer, CORS, etc.)
-├── controller/      # REST Controllers
-├── dto/             # Data Transfer Objects
-├── model/           # Entités MongoDB
-├── repository/      # Repositories MongoDB
-└── service/         # Logique métier (AI, Quiz, Scoring, etc.)
-```
-
-## 🎯 Endpoints Principaux
+### 🏠 Rooms
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
 | GET | `/api/rooms` | Liste toutes les rooms |
+| GET | `/api/rooms/{id}` | Détails d'une room |
+| GET | `/api/rooms/code/{code}` | Room par code |
 | POST | `/api/rooms` | Créer une room |
-| GET | `/api/quizzes/room/{code}` | Quiz d'une room |
-| POST | `/api/quizzes` | Créer un quiz |
-| GET | `/api/quizzes/{id}/questions` | Récupérer/Générer questions IA |
-| POST | `/api/quizzes/answers` | Soumettre une réponse |
-| GET | `/api/quizzes/{id}/results` | Résultats du quiz |
+| POST | `/api/rooms/{code}/join` | Rejoindre une room |
+| PUT | `/api/rooms/{id}/status` | Modifier statut |
 
-## 🎨 Données Initiales
+### 📝 Quiz
 
-Au premier démarrage, l'application initialise automatiquement:
-- 5 Badges
-- 4 Rooms de démonstration
-- 2 Utilisateurs de test
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/quiz/generate` | Générer questions via IA |
+| GET | `/api/quiz/{id}` | Détails d'un quiz |
+| POST | `/api/quiz/{id}/submit` | Soumettre une réponse |
 
-Voir `DATA_INITIALIZATION.md` pour plus de détails.
+### 🏆 Leaderboard
 
-## 🔧 Configuration
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/leaderboard/global` | Classement global |
+| GET | `/api/leaderboard/room/{code}` | Classement par room |
 
-Fichier: `src/main/resources/application.properties`
+### 🔐 Auth
 
-```properties
-# MongoDB
-spring.data.mongodb.uri=mongodb://localhost:27017/sofparcours
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/auth/register` | Inscription |
+| POST | `/api/auth/login` | Connexion |
 
-# Port serveur
-server.port=8080
+## 🌐 Exposer l'API avec ngrok
 
-# IA (mode démo par défaut)
-ai.api.key=demo-key
-ai.api.url=https://api.openai.com/v1/chat/completions
+Pour partager votre API avec des collaborateurs:
+
+```bash
+# 1. Démarrer l'application
+mvn spring-boot:run
+
+# 2. Dans un autre terminal, lancer ngrok
+ngrok http 8080
+
+# 3. Partager l'URL générée
+https://abc123.ngrok-free.app/swagger-ui.html
 ```
+
+## 📁 Structure du Projet
+
+```
+src/main/java/com/hackathon/sofParcours/
+├── SofParcoursApplication.java
+├── config/
+│   ├── SwaggerConfig.java
+│   ├── CacheConfig.java
+│   └── DataInitializer.java
+├── controller/
+│   ├── RoomController.java          # ✨ Endpoint search-or-create
+│   ├── QuizController.java
+│   ├── AuthController.java
+│   ├── LeaderboardController.java
+│   └── BadgeController.java
+├── service/
+│   ├── RoomCreationService.java     # ✨ Logique search-or-create
+│   ├── AIService.java               # ✨ Intégration OpenAI
+│   ├── RoomService.java
+│   ├── QuizService.java
+│   └── ScoringService.java
+├── model/
+│   ├── Room.java                    # ✨ + slug, generatedByAI
+│   ├── Quiz.java
+│   ├── Question.java
+│   ├── User.java
+│   └── Badge.java
+├── repository/
+│   ├── RoomRepository.java          # ✨ + findBySlug()
+│   ├── QuizRepository.java
+│   ├── QuestionRepository.java
+│   └── UserRepository.java
+└── dto/
+    ├── AIRoomResponse.java          # ✨ Nouveau
+    ├── RoomDTO.java                 # ✨ Nouveau
+    ├── QuizDTO.java                 # ✨ Nouveau
+    └── QuestionDTO.java             # ✨ Nouveau
+```
+
+## 🧪 Tests
+
+```bash
+# Tests unitaires
+mvn test
+
+# Tests avec couverture
+mvn test jacoco:report
+```
+
+## 🚢 Déploiement
+
+### Build Production
+
+```bash
+mvn clean package -DskipTests
+java -jar target/sofParcours-0.0.1-SNAPSHOT.jar
+```
+
+### Docker (optionnel)
+
+```dockerfile
+FROM openjdk:21-jdk-slim
+COPY target/sofParcours-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+```bash
+docker build -t sofparcours .
+docker run -p 8080:8080 sofparcours
+```
+
+## 📖 Documentation Complète
+
+Consultez [API_DOCUMENTATION.md](API_DOCUMENTATION.md) pour la documentation détaillée de l'endpoint `/search-or-create`.
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! Pour contribuer:
-
 1. Fork le projet
-2. Créez une branche (`git checkout -b feature/AmazingFeature`)
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
 3. Commit vos changements (`git commit -m 'Add AmazingFeature'`)
 4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
+5. Ouvrir une Pull Request
+
+## 📝 Roadmap
+
+- [x] Génération automatique de quiz via IA
+- [x] Système de rooms avec code unique
+- [x] Badges et scoring
+- [x] Leaderboard
+- [ ] WebSocket pour temps réel
+- [ ] Analytics et statistiques
+- [ ] Export des résultats (PDF/CSV)
+- [ ] Multi-langue (i18n)
+
+## 👥 Équipe
+
+- **Développeurs Backend** : Équipe Hackathon SofParcours
+- **Repository** : [github.com/imenbinov/sofParcours](https://github.com/imenbinov/sofParcours)
 
 ## 📄 License
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 👥 Auteurs
-
-- **Imen Binov** - [imenbinov](https://github.com/imenbinov)
-
-## 🙏 Remerciements
-
-- Spring Boot Team
-- MongoDB
-- OpenAPI/Swagger
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ---
 
-⭐ Si ce projet vous plaît, n'hésitez pas à lui donner une étoile !
+**🎯 Happy Coding with SofParcours!** 🚀

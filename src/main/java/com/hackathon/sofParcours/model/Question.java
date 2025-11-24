@@ -18,11 +18,16 @@ public class Question {
     private String difficulty; // EASY, MEDIUM, HARD
     private String category;
     private String quizId;
+    private String type;
+    private String correctAnswer;
+    private String explanation;
+    private int order;
 
     public Question() {}
 
-    public Question(String id, String text, List<String> options, int correctOptionIndex, 
-                   int points, int timeLimit, String difficulty, String category, String quizId) {
+    public Question(String id, String text, List<String> options, int correctOptionIndex,
+                   int points, int timeLimit, String difficulty, String category, String quizId,
+                   String type, String correctAnswer, String explanation, int order) {
         this.id = id;
         this.text = text;
         this.options = options;
@@ -32,6 +37,10 @@ public class Question {
         this.difficulty = difficulty;
         this.category = category;
         this.quizId = quizId;
+        this.type = type;
+        this.correctAnswer = correctAnswer;
+        this.explanation = explanation;
+        this.order = order;
     }
 
     public String getId() { return id; }
@@ -60,4 +69,24 @@ public class Question {
 
     public String getQuizId() { return quizId; }
     public void setQuizId(String quizId) { this.quizId = quizId; }
+
+    public String getType() { return type; }
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getCorrectAnswer() { return correctAnswer; }
+    public void setCorrectAnswer(String correctAnswer) {
+        this.correctAnswer = correctAnswer;
+    }
+
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public int getOrder() { return order; }
+    public void setOrder(int order) {
+        this.order = order;
+    }
 }

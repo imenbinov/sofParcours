@@ -9,4 +9,10 @@ import java.util.Optional;
 @Repository
 public interface RoomRepository extends MongoRepository<Room, String> {
     Optional<Room> findByCode(String code);
+
+    /**
+     * Recherche une Room par son slug normalisé
+     * Utilisé pour l'idempotence du endpoint search-or-create
+     */
+    Optional<Room> findBySlug(String slug);
 }
