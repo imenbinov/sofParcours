@@ -2,6 +2,7 @@ package com.hackathon.sofParcours.service;
 
 import com.hackathon.sofParcours.model.Room;
 import com.hackathon.sofParcours.repository.RoomRepository;
+import com.hackathon.sofParcours.util.CodeGenerator;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class RoomService {
 
     public Room createRoom(String name, String description, String createdBy) {
         Room room = new Room();
-        room.setCode(generateRoomCode());
+        room.setCode(CodeGenerator.generateRoomCode());
         room.setName(name);
         room.setDescription(description);
         room.setCreatedBy(createdBy);

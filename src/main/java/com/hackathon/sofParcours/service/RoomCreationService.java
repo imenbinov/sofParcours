@@ -9,6 +9,8 @@ import com.hackathon.sofParcours.repository.QuestionRepository;
 import com.hackathon.sofParcours.dto.RoomDTO;
 import com.hackathon.sofParcours.dto.QuizDTO;
 import com.hackathon.sofParcours.dto.QuestionDTO;
+import com.hackathon.sofParcours.util.CodeGenerator;
+import com.hackathon.sofParcours.util.SlugUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -52,7 +54,7 @@ public class RoomCreationService {
         logger.info("Search or create room for query: '{}', userProfile: '{}'", query, userProfile);
 
         // 1. Normaliser la requête en slug
-        String slug = normalizeToSlug(query);
+        String slug = SlugUtils.normalize(query);
         logger.debug("Normalized slug: '{}'", slug);
 
         // 2. Rechercher si une Room existe déjà
@@ -129,33 +131,6 @@ public class RoomCreationService {
     }
 
     /**
-     * Normalise un texte en slug
-     * Ex: "DevOps avancé" → "devops-avance"
-     */
-    private String normalizeToSlug(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            throw new IllegalArgumentException("Text cannot be null or empty");
-        }
-
-        // Normalisation Unicode (décomposition des accents)
-        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
-        
-        // Suppression des diacritiques
-        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        
-        // Conversion en minuscules
-        normalized = normalized.toLowerCase();
-        
-        // Remplacement des espaces et caractères spéciaux par des tirets
-        normalized = normalized.replaceAll("[^a-z0-9]+", "-");
-        
-        // Suppression des tirets en début et fin
-        normalized = normalized.replaceAll("^-+|-+$", "");
-        
-        return normalized;
-    }
-
-    /**
      * Convertit RoomDTO en Room
      */
     private Room convertRoomDTOToModel(RoomDTO dto, String slug) {
@@ -163,7 +138,7 @@ public class RoomCreationService {
         room.setName(dto.getName());
         room.setDescription(dto.getDescription());
         room.setSlug(slug);
-        room.setCode(generateRoomCode());
+        room.setCode(CodeGenerator.generateRoomCode());
         room.setCreatedBy(dto.getCreatedBy() != null ? dto.getCreatedBy() : "AI");
         room.setStatus("active");
         room.setCreatedAt(LocalDateTime.now());
@@ -205,20 +180,5 @@ public class RoomCreationService {
         }
         
         return questions;
-    }
-
-    /**
-     * Génère un code unique de room (6 caractères alphanumériques)
-     */
-    private String generateRoomCode() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        StringBuilder code = new StringBuilder();
-        
-        for (int i = 0; i < 6; i++) {
-            code.append(characters.charAt(random.nextInt(characters.length())));
-        }
-        
-        return code.toString();
     }
 }
