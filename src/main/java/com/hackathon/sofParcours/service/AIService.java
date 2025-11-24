@@ -40,8 +40,6 @@ public class AIService {
         this.objectMapper = new ObjectMapper();
     }
 
-    // Méthode askAI() supprimée - utiliser generateRoomWithQuiz() à la place
-
     /**
      * Génère une Room complète avec Quiz et Questions via l'IA
      */
